@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+:root {
+  --bg:      #0A0A16;
+  --panel:   #12122A;
+  --panel2:  #1B1B3A;
+  --line:    rgba(0,240,255,0.22);
+  --ink:     #E8E8F5;
+  --dim:     #7A7AB8;
+  --magenta: #FF2E93;
+  --cyan:    #00F0FF;
+  --yellow:  #FFE156;
+  --lime:    #4CFF6B;
+  --red:     #FF4C4C;
+  --shadow:  4px 4px 0 rgba(0,0,0,0.85);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.3) 0px, rgba(0,0,0,0.3) 1px, transparent 1px, transparent 3px),
+    radial-gradient(70% 55% at 20% -10%, rgba(255,46,147,0.18), transparent 60%),
+    radial-gradient(60% 45% at 110% 0%,  rgba(0,240,255,0.14), transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  min-height: 100vh;
+}
+
+/* ── tipografía ── */
+h1, h2, h3, .px { font-family: 'Press Start 2P', monospace; font-weight: 400; }
+h1 { font-size: clamp(14px, 3vw, 22px); color: var(--cyan); text-shadow: 0 0 8px rgba(0,240,255,0.6), 2px 2px 0 #000; }
+h2 { font-size: clamp(10px, 2vw, 14px); color: var(--yellow); text-shadow: 2px 2px 0 #000; }
+h3 { font-size: 11px; color: var(--dim); }
+
+/* ── layout ── */
+.wrap  { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+.col   { display: flex; flex-direction: column; gap: 16px; }
+.row   { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.hidden { display: none !important; }
+.center { text-align: center; }
+
+/* ── card ── */
+.card {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+/* ── botones ── */
+.btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  padding: 12px 18px;
+  border: 2px solid #000;
+  background: var(--panel2);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+  transition: transform .08s, box-shadow .08s;
+}
+.btn:hover  { transform: translate(1px,1px); box-shadow: 2px 2px 0 #000; }
+.btn:active { transform: translate(3px,3px); box-shadow: none; }
+.btn:disabled { opacity: .3; cursor: not-allowed; transform: none; box-shadow: 3px 3px 0 #000; }
+
+.btn.cyan    { background: var(--cyan);    color: #0A0A16; }
+.btn.magenta { background: var(--magenta); color: #fff; }
+.btn.yellow  { background: var(--yellow);  color: #0A0A16; }
+.btn.lime    { background: var(--lime);    color: #0A0A16; }
+.btn.big     { font-size: 13px; padding: 18px 24px; }
+.btn.full    { width: 100%; }
+
+/* ── inputs ── */
+input[type=text] {
+  background: #0A0A16;
+  border: 2px solid var(--line);
+  color: var(--ink);
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  padding: 10px 14px;
+  width: 100%;
+}
+input[type=text]:focus { outline: none; border-color: var(--cyan); }
+
+/* ── avatar picker ── */
+.avatar-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.av {
+  font-size: 28px; width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--line); cursor: pointer;
+  background: var(--panel2);
+}
+.av.sel { border-color: var(--cyan); box-shadow: 0 0 0 2px var(--cyan); }
+
+/* ── opciones A/B/C/D ── */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+.opt-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(9px, 1.5vw, 12px);
+  padding: 20px 14px;
+  border: 3px solid #000;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #000;
+  text-align: left;
+  line-height: 1.6;
+  transition: transform .08s, box-shadow .08s;
+}
+.opt-btn:active { transform: translate(4px,4px); box-shadow: none; }
+.opt-btn:disabled { opacity: .5; cursor: not-allowed; }
+.opt-btn.A { background: #E8212A; color: #fff; }
+.opt-btn.B { background: #1565C0; color: #fff; }
+.opt-btn.C { background: #F9A825; color: #000; }
+.opt-btn.D { background: #2E7D32; color: #fff; }
+.opt-btn.correct  { outline: 4px solid var(--lime);    outline-offset: 2px; }
+.opt-btn.wrong    { outline: 4px solid var(--red);     outline-offset: 2px; opacity: .55; }
+.opt-btn.selected { box-shadow: 0 0 0 3px var(--cyan); }
+
+/* ── barra de vida / progreso ── */
+.bar-track {
+  background: #0A0A16;
+  border: 2px solid var(--line);
+  height: 22px;
+  padding: 2px;
+}
+.bar-fill {
+  height: 100%;
+  background: var(--lime);
+  background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.25) 0, rgba(0,0,0,0.25) 2px, transparent 2px, transparent 9px);
+  transition: width .4s steps(10);
+}
+.bar-fill.warning { background: var(--yellow); }
+.bar-fill.danger  { background: var(--red); }
+
+/* ── timer ── */
+.timer-big {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(28px, 6vw, 52px);
+  color: var(--lime);
+  text-shadow: 0 0 16px rgba(76,255,107,0.7);
+  text-align: center;
+}
+.timer-big.warning { color: var(--yellow); text-shadow: 0 0 16px rgba(255,225,86,0.7); }
+.timer-big.danger  { color: var(--red);    text-shadow: 0 0 16px rgba(255,76,76,0.8); animation: blink .4s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ── leaderboard ── */
+.lb-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 80px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.lb-rank { font-family:'Press Start 2P',monospace; font-size:11px; color:var(--dim); text-align:center; }
+.lb-name { font-size: 20px; }
+.lb-score{ font-family:'Press Start 2P',monospace; font-size:12px; text-align:right; }
+.lb-row.gold   .lb-name, .lb-row.gold   .lb-score { color: var(--yellow); text-shadow: 0 0 6px rgba(255,225,86,0.6); }
+.lb-row.silver .lb-name, .lb-row.silver .lb-score { color: #C0C0C0; }
+.lb-row.bronze .lb-name, .lb-row.bronze .lb-score { color: #CD7F32; }
+
+/* ── podio ── */
+.podio {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 24px 0;
+}
+.podio-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.podio-block {
+  width: 90px; display: flex; align-items: center; justify-content: center;
+  border: 3px solid #000; font-family:'Press Start 2P',monospace; font-size:18px;
+  box-shadow: 4px 4px 0 #000;
+}
+.podio-block.p1 { height: 110px; background: var(--yellow); }
+.podio-block.p2 { height: 80px;  background: #C0C0C0; }
+.podio-block.p3 { height: 60px;  background: #CD7F32; }
+.podio-name  { font-size: 16px; text-align:center; }
+.podio-score { font-family:'Press Start 2P',monospace; font-size:10px; color:var(--dim); }
+
+/* ── jugadores conectados (lobby) ── */
+.player-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.player-chip  {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--panel2); border: 2px solid var(--line);
+  font-size: 18px;
+}
+
+/* ── estado (badge) ── */
+.badge {
+  font-family: 'Press Start 2P', monospace; font-size: 9px;
+  padding: 5px 10px; border: 2px solid #000; display: inline-block;
+}
+.badge.green  { background: var(--lime);    color: #0A0A16; }
+.badge.red    { background: var(--magenta); color: #fff; }
+.badge.yellow { background: var(--yellow);  color: #0A0A16; }
+
+/* ── countdown overlay ── */
+.countdown-overlay {
+  position: fixed; inset: 0; background: rgba(10,10,22,0.92);
+  display: flex; align-items: center; justify-content: center; z-index: 99;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(60px, 15vw, 120px);
+  color: var(--cyan); text-shadow: 0 0 30px rgba(0,240,255,0.8);
+  animation: popIn .3s steps(2);
+}
+@keyframes popIn { from { transform: scale(1.4); } to { transform: scale(1); } }
+
+/* ── respuesta feedback (celu) ── */
+.feedback-box {
+  text-align: center; padding: 32px 20px; font-size: 22px;
+}
+.feedback-box .emoji { font-size: 60px; display:block; margin-bottom:12px; }
+.feedback-box .pts   { font-family:'Press Start 2P',monospace; font-size:18px; color:var(--lime); }
+
+@media (max-width: 480px) {
+  .options-grid { grid-template-columns: 1fr; }
+  .opt-btn { padding: 18px 12px; }
+  .podio-block { width: 70px; }
+}

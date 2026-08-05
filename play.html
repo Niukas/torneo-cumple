@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Torneo 🕹️</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      body {
+        padding-bottom: 30px;
+      }
+      /* pantalla de unirse */
+      #joinScreen {
+        max-width: 420px;
+        margin: 40px auto;
+        padding: 20px;
+      }
+      /* pantalla de espera */
+      #waitScreen {
+        text-align: center;
+        padding: 60px 20px;
+      }
+      /* pantalla de juego */
+      #playScreen {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      .my-score-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        background: var(--panel);
+        border-bottom: 2px solid var(--line);
+        font-family: "Press Start 2P", monospace;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ── UNIRSE ── -->
+    <div id="joinScreen" class="col">
+      <div class="center" style="margin-bottom: 20px">
+        <span style="font-size: 36px">🕹️</span>
+        <h1 style="margin-top: 8px" id="joinTitle">Copa de Cumple</h1>
+      </div>
+
+      <div class="card col">
+        <h2>Tu nombre</h2>
+        <input
+          type="text"
+          id="inpName"
+          placeholder="ej. Facu"
+          maxlength="16"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="card col">
+        <h2>Tu avatar</h2>
+        <div class="avatar-grid" id="avatarGrid"></div>
+      </div>
+
+      <button class="btn magenta big full" id="joinBtn">ENTRAR AL JUEGO</button>
+      <div
+        id="joinError"
+        style="
+          color: var(--magenta);
+          font-size: 16px;
+          text-align: center;
+          margin-top: 8px;
+        "
+      ></div>
+    </div>
+
+    <!-- ── ESPERANDO ── -->
+    <div id="waitScreen" class="hidden col">
+      <span style="font-size: 48px; display: block; margin-bottom: 16px"
+        >⏳</span
+      >
+      <h2>Esperando que el host arranque...</h2>
+      <div
+        id="myNameBadge"
+        class="badge green"
+        style="margin: 16px auto 0"
+      ></div>
+    </div>
+
+    <!-- ── EN JUEGO ── -->
+    <div id="playScreen" class="hidden">
+      <div class="my-score-bar">
+        <span id="myNameTop"></span>
+        <span id="myScoreTop">0 PTS</span>
+      </div>
+
+      <!-- sub-pantalla: pregunta activa -->
+      <div id="subQuestion" class="col" style="padding: 16px 0; gap: 12px">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <span
+            id="qLabelPlay"
+            style="font-size: 15px; color: var(--dim)"
+          ></span>
+          <div class="timer-big" id="timerPlay" style="font-size: 28px">30</div>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" id="timerBarPlay" style="width: 100%"></div>
+        </div>
+        <div
+          class="card"
+          id="questionTextPlay"
+          style="font-size: 22px; line-height: 1.5"
+        ></div>
+        <div class="options-grid" id="optionsPlay"></div>
+      </div>
+
+      <!-- sub-pantalla: feedback después de responder -->
+      <div id="subFeedback" class="feedback-box hidden">
+        <span class="emoji" id="feedbackEmoji">⏳</span>
+        <div id="feedbackMsg" style="margin-bottom: 12px"></div>
+        <div class="pts" id="feedbackPts"></div>
+      </div>
+
+      <!-- sub-pantalla: resultados ronda -->
+      <div
+        id="subResults"
+        class="col hidden"
+        style="padding: 16px 0; gap: 12px"
+      >
+        <h2 class="center">RESULTADOS</h2>
+        <div class="card col" style="gap: 6px" id="resultsLb"></div>
+        <div
+          class="badge green center"
+          id="myRankBadge"
+          style="align-self: center"
+        ></div>
+      </div>
+
+      <!-- sub-pantalla: podio final -->
+      <div
+        id="subPodio"
+        class="col hidden"
+        style="padding: 16px 0; text-align: center; gap: 16px"
+      >
+        <h1>🏆 FIN!</h1>
+        <div class="podio" id="podioPlay"></div>
+        <div
+          id="myFinalRank"
+          style="
+            font-family: &quot;Press Start 2P&quot;, monospace;
+            font-size: 13px;
+            color: var(--cyan);
+          "
+        ></div>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+    <script src="js/firebase.js"></script>
+    <script src="js/play.js"></script>
+  </body>
+</html>

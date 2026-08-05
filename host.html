@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Host 🕹️</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- ═══════════════════════════════════════════
+     FASE: lobby
+═══════════════════════════════════════════ -->
+    <div id="phaseLobby" class="wrap col">
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 4px;
+        "
+      >
+        <span style="font-size: 30px">🕹️</span>
+        <div>
+          <h3>INSERT COIN</h3>
+          <h1 id="lobbyTitle">Copa de Cumple</h1>
+        </div>
+      </div>
+
+      <div class="card col">
+        <h2>Jugadores conectados</h2>
+        <div id="playerChips" class="player-chips">
+          <span class="dim" style="font-size: 17px"
+            >Esperando jugadores...</span
+          >
+        </div>
+        <div
+          id="playerCount"
+          class="badge yellow"
+          style="margin-top: 8px; align-self: flex-start"
+        >
+          0 jugadores
+        </div>
+      </div>
+
+      <div class="card col">
+        <h2>Preguntas cargadas</h2>
+        <div id="questionCount" style="font-size: 17px; color: var(--dim)">
+          0 preguntas
+        </div>
+        <details style="margin-top: 8px">
+          <summary
+            style="
+              font-family: &quot;Press Start 2P&quot;, monospace;
+              font-size: 10px;
+              color: var(--cyan);
+              cursor: pointer;
+              padding: 6px 0;
+            "
+          >
+            Editar preguntas
+          </summary>
+          <div class="col" style="margin-top: 10px; gap: 8px">
+            <div style="font-size: 15px; color: var(--dim)">
+              Una pregunta por línea. Formato: Pregunta | A | B | C | D |
+              letra_correcta
+            </div>
+            <textarea
+              id="questionsEditor"
+              style="
+                width: 100%;
+                min-height: 180px;
+                background: #0a0a16;
+                border: 2px solid var(--line);
+                color: var(--ink);
+                font-family: &quot;VT323&quot;, monospace;
+                font-size: 16px;
+                padding: 10px;
+              "
+              placeholder="¿Quién llegó tarde a todos los cumples? | Martín | Lucas | Juli | Fer | A
+¿Cuál es la comida favorita del cumpleañero? | Pizza | Sushi | Asado | Pasta | C"
+            ></textarea>
+            <button class="btn cyan" id="saveQuestionsBtn">
+              💾 Guardar preguntas
+            </button>
+          </div>
+        </details>
+      </div>
+
+      <button class="btn magenta big" id="startGameBtn" disabled>
+        ▶ EMPEZAR JUEGO
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+     FASE: question
+═══════════════════════════════════════════ -->
+    <div id="phaseQuestion" class="wrap col hidden">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <div>
+          <h3 id="qLabel">PREGUNTA 1 / 10</h3>
+          <div id="answerCount" class="badge yellow" style="margin-top: 6px">
+            0 respondieron
+          </div>
+        </div>
+        <div>
+          <div class="timer-big" id="timerDisplay">30</div>
+          <div class="bar-track" style="width: 140px; margin-top: 6px">
+            <div class="bar-fill" id="timerBar" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div
+          id="questionText"
+          style="font-size: clamp(18px, 3vw, 26px); line-height: 1.5"
+        ></div>
+      </div>
+
+      <div class="options-grid" id="hostOptions"></div>
+
+      <button
+        class="btn yellow"
+        id="skipQuestionBtn"
+        style="align-self: flex-end"
+      >
+        SALTAR ▶
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+     FASE: results (una pregunta)
+═══════════════════════════════════════════ -->
+    <div id="phaseResults" class="wrap col hidden">
+      <h2 style="text-align: center">RESULTADOS</h2>
+
+      <div class="card">
+        <div
+          id="resultQuestion"
+          style="font-size: 20px; color: var(--dim); margin-bottom: 12px"
+        ></div>
+        <div
+          id="resultAnswer"
+          style="font-size: 22px; color: var(--lime)"
+        ></div>
+      </div>
+
+      <div class="card col">
+        <h2>Ranking parcial</h2>
+        <div id="partialLb"></div>
+      </div>
+
+      <button class="btn cyan big" id="nextQuestionBtn">
+        SIGUIENTE PREGUNTA ▶
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+     FASE: podio final
+═══════════════════════════════════════════ -->
+    <div id="phasePodio" class="wrap col hidden">
+      <h1 class="center" style="margin-bottom: 8px">🏆 GAME OVER 🏆</h1>
+      <div class="podio" id="podioDisplay"></div>
+      <div class="card col">
+        <h2>Tabla final</h2>
+        <div id="finalLb"></div>
+      </div>
+      <button class="btn magenta big full" id="restartBtn">
+        ↺ NUEVA PARTIDA
+      </button>
+    </div>
+
+    <!-- countdown overlay (reutilizable) -->
+    <div class="countdown-overlay hidden" id="countdownOverlay"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+    <script src="js/firebase.js"></script>
+    <script src="js/host.js"></script>
+  </body>
+</html>
