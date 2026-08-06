@@ -2,19 +2,21 @@
 const AVATARS = ['🐶','🐱','🦊','🐸','🐼','🐨','🦁','🐯','🐧','🦉','🦋','🐲','👾','🤖','👻','🎃'];
 const LABELS  = ['A','B','C','D'];
 
-// ─── estado local ───────────────────────────────
-const myId   = getMyId();
-let myName   = '';
-let myAvatar = AVATARS[0];
-let myScore  = 0;
-let hasAnsweredThisRound = false;
+// ─── estado global ──────────────────────────────
+const myId = getMyId();
+let state = {
+  phase: 'lobby',
+  questionIndex: 0,
+  questions: [],
+  players: {},
+  answers: {},
+  hasAnswered: false,
+};
 let timerInterval = null;
-let currentPhase = 'lobby';
-let currentQ = 0;
-let questions = [];
 
-// ─── render avatar picker ───────────────────────
+// ─── avatar picker ──────────────────────────────
 const avatarGrid = document.getElementById('avatarGrid');
+let myAvatar = AVATARS[0];
 AVATARS.forEach((av, i) => {
   const div = document.createElement('div');
   div.className = 'av' + (i === 0 ? ' sel' : '');
@@ -29,76 +31,105 @@ AVATARS.forEach((av, i) => {
 
 // ─── unirse ─────────────────────────────────────
 document.getElementById('joinBtn').addEventListener('click', async () => {
-  myName = document.getElementById('inpName').value.trim();
+  const name = document.getElementById('inpName').value.trim();
   const errEl = document.getElementById('joinError');
-  if (!myName) { errEl.textContent = 'Escribí tu nombre primero.'; return; }
+  if (!name) { errEl.textContent = 'Escribí tu nombre primero.'; return; }
   errEl.textContent = '';
-  await dbSet(`party/players/${myId}`, { name: myName, avatar: myAvatar, score: 0 });
+  await dbSet(`party/players/${myId}`, { name, avatar: myAvatar, score: 0 });
   showScreen('wait');
-  document.getElementById('myNameBadge').textContent = `${myAvatar} ${myName}`;
+  document.getElementById('myNameBadge').textContent = `${myAvatar} ${name}`;
 });
 
-// ─── listeners de Firebase ──────────────────────
+// ─── listeners Firebase (todos actualizan estado y re-renderizan) ──
 dbOn('party/meta', meta => {
   if (!meta) return;
-  currentPhase = meta.phase || 'lobby';
-  currentQ     = meta.questionIndex || 0;
+  const prevPhase = state.phase;
+  const prevQ     = state.questionIndex;
+  state.phase         = meta.phase || 'lobby';
+  state.questionIndex = meta.questionIndex || 0;
 
-  document.getElementById('joinTitle') && (document.getElementById('joinTitle').textContent = meta.title || 'Copa de Cumple');
-
-  if (currentPhase === 'question') {
-    hasAnsweredThisRound = false;
-    showScreen('play');
-    showSub('question');
+  // nueva pregunta → resetear respuesta
+  if (state.phase === 'question' && (prevPhase !== 'question' || prevQ !== state.questionIndex)) {
+    state.hasAnswered = false;
+    clearInterval(timerInterval);
   }
-  if (currentPhase === 'results') {
-    showScreen('play');
-    showSub('results');
-  }
-  if (currentPhase === 'podio') {
-    showScreen('play');
-    showSub('podio');
-  }
+  render();
 });
 
 dbOn('party/questions', q => {
-  questions = q || [];
-  if (currentPhase === 'question') renderQuestion();
+  state.questions = q || [];
+  render();
 });
 
-dbOn(`party/players/${myId}`, p => {
-  if (!p) return;
-  myScore = p.score || 0;
-  document.getElementById('myScoreTop').textContent = myScore + ' PTS';
-  document.getElementById('myNameTop').textContent   = (p.avatar || '') + ' ' + (p.name || '');
-});
-
-dbOn('party/answers', answers => {
-  if (currentPhase === 'results') renderResultsLb(answers);
-  if (currentPhase === 'podio')   renderPodio();
-
-  // si ya tengo mi respuesta en firebase, mostrar feedback
-  if (answers && answers[myId] && answers[myId].correct !== undefined && hasAnsweredThisRound) {
-    const myAns = answers[myId];
-    showFeedback(myAns.correct, myAns.pts || 0);
+dbOn('party/players', p => {
+  state.players = p || {};
+  // actualizar mi puntaje en el header
+  const me = state.players[myId];
+  if (me) {
+    document.getElementById('myScoreTop').textContent = (me.score || 0) + ' PTS';
+    document.getElementById('myNameTop').textContent  = (me.avatar || '') + ' ' + (me.name || '');
   }
+  render();
 });
 
-dbOn('party/players', players => {
-  if (currentPhase === 'results') renderResultsLb(null, players);
-  if (currentPhase === 'podio')   renderPodio(players);
+dbOn('party/answers', a => {
+  state.answers = a || {};
+  render();
 });
 
-// ─── renderizar pregunta ─────────────────────────
+// ─── render principal ───────────────────────────
+function render() {
+  const { phase } = state;
+
+  // si no estoy en play todavía, no renderizar pantallas de juego
+  const playVisible = !document.getElementById('playScreen').classList.contains('hidden');
+  if (!playVisible && phase !== 'lobby') {
+    // el juego empezó y yo estaba en wait → pasar a play
+    if (!document.getElementById('waitScreen').classList.contains('hidden')) {
+      showScreen('play');
+    }
+  }
+
+  if (phase === 'question') {
+    if (!document.getElementById('playScreen').classList.contains('hidden')) {
+      showScreen('play');
+    }
+    if (!state.hasAnswered) {
+      showSub('question');
+      renderQuestion();
+    }
+    // si ya respondí y tengo resultado, mostrar feedback
+    const myAns = state.answers[myId];
+    if (state.hasAnswered && myAns && myAns.correct !== undefined) {
+      showFeedback(myAns.correct, myAns.pts || 0);
+    }
+  }
+
+  if (phase === 'results') {
+    showScreen('play');
+    showSub('results');
+    renderResultsLb();
+  }
+
+  if (phase === 'podio') {
+    showScreen('play');
+    showSub('podio');
+    renderPodio();
+  }
+}
+
+// ─── pregunta ───────────────────────────────────
 function renderQuestion() {
-  const q = questions[currentQ];
+  const q = state.questions[state.questionIndex];
   if (!q) return;
-  clearInterval(timerInterval);
 
-  document.getElementById('qLabelPlay').textContent = `PREGUNTA ${currentQ + 1} / ${questions.length}`;
+  document.getElementById('qLabelPlay').textContent      = `PREGUNTA ${state.questionIndex + 1} / ${state.questions.length}`;
   document.getElementById('questionTextPlay').textContent = q.text;
 
   const grid = document.getElementById('optionsPlay');
+  // solo re-renderizar botones si cambiaron (evitar parpadeo)
+  if (grid.dataset.qIndex === String(state.questionIndex)) return;
+  grid.dataset.qIndex = state.questionIndex;
   grid.innerHTML = '';
   LABELS.forEach((l, i) => {
     const btn = document.createElement('button');
@@ -108,7 +139,10 @@ function renderQuestion() {
     grid.appendChild(btn);
   });
 
-  // timer
+  // arrancar timer solo si no está corriendo para esta pregunta
+  if (grid.dataset.timerQ === String(state.questionIndex)) return;
+  grid.dataset.timerQ = state.questionIndex;
+  clearInterval(timerInterval);
   let left = 30;
   updateTimerUI(left);
   timerInterval = setInterval(() => {
@@ -116,7 +150,7 @@ function renderQuestion() {
     updateTimerUI(left);
     if (left <= 0) {
       clearInterval(timerInterval);
-      if (!hasAnsweredThisRound) showFeedback(false, 0, true);
+      if (!state.hasAnswered) showFeedback(false, 0, true);
     }
   }, 1000);
 }
@@ -133,25 +167,17 @@ function updateTimerUI(left) {
 
 // ─── responder ───────────────────────────────────
 function submitAnswer(optionIndex, btn) {
-  if (hasAnsweredThisRound) return;
-  hasAnsweredThisRound = true;
+  if (state.hasAnswered) return;
+  state.hasAnswered = true;
   clearInterval(timerInterval);
 
-  // deshabilitar todos los botones y marcar seleccionado
-  document.querySelectorAll('.opt-btn').forEach(b => {
-    b.disabled = true;
-    b.style.opacity = '.5';
-  });
-  btn.classList.add('selected');
+  document.querySelectorAll('.opt-btn').forEach(b => { b.disabled = true; b.style.opacity = '.5'; });
   btn.style.opacity = '1';
+  btn.classList.add('selected');
 
-  // guardar en Firebase con timestamp
-  dbSet(`party/answers/${myId}`, {
-    option: optionIndex,
-    ts: Date.now()
-  });
+  dbSet(`party/answers/${myId}`, { option: optionIndex, ts: Date.now() });
 
-  // mostrar "esperando resultado..."
+  // mostrar "esperando..." hasta que el host cierre la ronda
   showSub('feedback');
   document.getElementById('feedbackEmoji').textContent = '⏳';
   document.getElementById('feedbackMsg').textContent   = 'Esperando resultado...';
@@ -171,62 +197,58 @@ function showFeedback(correct, pts, timeout = false) {
   document.getElementById('feedbackPts').textContent   = correct ? `+${pts} PTS` : '+0 PTS';
 }
 
-// ─── resultados de ronda ────────────────────────
-function renderResultsLb(answers, players) {
-  // si no tenemos ambos, esperar al siguiente evento
-  if (!players) {
-    dbOnce('party/players', p => renderResultsLb(answers, p));
-    return;
-  }
-  if (!answers) {
-    dbOnce('party/answers', a => renderResultsLb(a, players));
-    return;
-  }
-  const sorted = Object.entries(players)
-    .map(([uid, p]) => ({ uid, ...p, pts: answers[uid]?.pts || 0, correct: answers[uid]?.correct }))
-    .sort((a,b) => (b.score||0) - (a.score||0));
+// ─── resultados ──────────────────────────────────
+function renderResultsLb() {
+  const { players, answers } = state;
+  if (!Object.keys(players).length) return;
 
-  const el = document.getElementById('resultsLb');
-  el.innerHTML = sorted.map((p,i) => {
+  const sorted = Object.entries(players)
+    .map(([uid, p]) => ({
+      uid, ...p,
+      pts:     answers[uid]?.pts     ?? 0,
+      correct: answers[uid]?.correct ?? false,
+    }))
+    .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+  document.getElementById('resultsLb').innerHTML = sorted.map((p, i) => {
     const cls  = i===0?'gold':i===1?'silver':i===2?'bronze':'';
-    const mark = p.correct ? `<span style="color:var(--lime);">+${p.pts}</span>` : '';
-    const me   = p.uid === myId ? ' ← vos' : '';
+    const mark = p.correct ? `<span style="color:var(--lime);">+${p.pts}</span>` : '❌';
+    const me   = p.uid === myId ? ' <span style="color:var(--cyan);">← vos</span>' : '';
     return `<div class="lb-row ${cls}">
       <div class="lb-rank">${i+1}</div>
       <div class="lb-name">${p.avatar} ${escHtml(p.name)}${me} ${mark}</div>
-      <div class="lb-score">${p.score}</div>
+      <div class="lb-score">${p.score || 0}</div>
     </div>`;
   }).join('');
 
   const myPos = sorted.findIndex(p => p.uid === myId) + 1;
   const badge = document.getElementById('myRankBadge');
-  if (badge) badge.textContent = `Tu posición: #${myPos}`;
+  if (badge) badge.textContent = myPos > 0 ? `Tu posición: #${myPos}` : '';
 }
 
 // ─── podio ───────────────────────────────────────
-function renderPodio(players) {
-  if (!players) { dbOnce('party/players', p => renderPodio(p)); return; }
-  const sorted = Object.entries(players)
-    .map(([uid,p]) => ({ uid,...p }))
-    .sort((a,b)=>(b.score||0)-(a.score||0));
+function renderPodio() {
+  const sorted = Object.entries(state.players)
+    .map(([uid, p]) => ({ uid, ...p }))
+    .sort((a, b) => (b.score || 0) - (a.score || 0));
 
-  const podio   = document.getElementById('podioPlay');
   const top3    = [sorted[1], sorted[0], sorted[2]].filter(Boolean);
   const classes = ['p2','p1','p3'];
   const medals  = ['🥈','🥇','🥉'];
-  podio.innerHTML = top3.map((p,i) => `
+
+  document.getElementById('podioPlay').innerHTML = top3.map((p, i) => `
     <div class="podio-col">
       <div class="podio-name">${p.avatar} ${escHtml(p.name)}</div>
       <div class="podio-block ${classes[i]}">${medals[i]}</div>
-      <div class="podio-score">${p.score} PTS</div>
+      <div class="podio-score">${p.score || 0} PTS</div>
     </div>`).join('');
 
   const myPos = sorted.findIndex(p => p.uid === myId) + 1;
   const final = document.getElementById('myFinalRank');
-  if (final) final.textContent = `Terminaste en el puesto #${myPos}`;
+  if (final) final.textContent = myPos > 0 ? `Terminaste en el puesto #${myPos}` : '';
 }
 
-// ─── helpers de pantalla ────────────────────────
+// ─── helpers ────────────────────────────────────
 function showScreen(screen) {
   ['joinScreen','waitScreen','playScreen'].forEach(id =>
     document.getElementById(id).classList.add('hidden')
@@ -247,13 +269,10 @@ function escHtml(s) {
   const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML;
 }
 
-// ─── si el jugador ya se había unido antes, saltar join screen ──
+// ─── si ya me había unido antes, saltar join ────
 dbOnce(`party/players/${myId}`, p => {
   if (p) {
-    myName   = p.name;
-    myAvatar = p.avatar;
-    myScore  = p.score || 0;
     showScreen('wait');
-    document.getElementById('myNameBadge').textContent = `${myAvatar} ${myName}`;
+    document.getElementById('myNameBadge').textContent = `${p.avatar} ${p.name}`;
   }
 });
