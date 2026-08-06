@@ -289,3 +289,21 @@ function escHtml(s) {
 dbOnce('party/meta', meta => {
   if (!meta) dbSet('party/meta', { title:'Copa de Cumple', phase:'lobby', questionIndex:0 });
 });
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  if (!confirm('¿Cerrar la lobby? Se desconectan todos los jugadores.')) return;
+  await dbSet('party/meta/phase', 'closed');
+  setTimeout(async () => {
+    await dbRemove('party');
+    location.reload();
+  }, 1500); // espera que los celu reaccionen antes de borrar todo
+});
+
+document.getElementById('forceEndBtn')?.addEventListener('click', async () => {
+  await dbSet('party/meta/phase', 'lobby');
+  await dbRemove('party/answers');
+  // resetear scores
+  const updates = {};
+  Object.keys(players).forEach(uid => updates[`party/players/${uid}/score`] = 0);
+  await dbUpdate('/', updates);
+});
