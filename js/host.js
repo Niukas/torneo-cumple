@@ -1,3 +1,6 @@
+const pwd = prompt('Contraseña del host:');
+if (pwd !== 'cumple2026') { document.body.innerHTML = ''; location.href = 'play.html'; }
+
 // ─── constantes ────────────────────────────────
 const QUESTION_TIME = 30; // segundos por pregunta
 const MAX_POINTS    = 1000;
