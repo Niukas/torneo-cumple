@@ -101,7 +101,7 @@ function renderPlayers() {
     ? list
         .map(
           (p) =>
-            `<div class="player-chip">${p.avatar} ${escHtml(p.name)}</div>`,
+            `<div class="player-chip">${renderAvatarHTML(p.avatar, 22)} ${escHtml(p.name)}</div>`,
         )
         .join("")
     : '<span style="color:var(--dim);font-size:17px;">Esperando jugadores...</span>';
@@ -140,8 +140,8 @@ function renderResults() {
   const q = questions[currentQ];
   if (!q) return;
   document.getElementById("resultQuestion").textContent = q.text;
-  document.getElementById("resultAnswer").textContent =
-    `✅ ${LABELS[q.correct]}) ${escHtml(q.options[q.correct])}`;
+  document.getElementById("resultAnswer").innerHTML =
+    `${icons.get("check", 22, "ic-correct")} <span style="vertical-align:middle;">${LABELS[q.correct]}) ${escHtml(q.options[q.correct])}</span>`;
   renderPartialLb("partialLb");
 }
 
@@ -151,13 +151,17 @@ function renderPodio() {
   const podio = document.getElementById("podioDisplay");
   const top3 = [sorted[1], sorted[0], sorted[2]].filter(Boolean);
   const classes = ["p2", "p1", "p3"];
-  const medals = ["🥈", "🥇", "🥉"];
+  const medalIcons = [
+    icons.get("medal2", 30, "ic-medal"),   // 2do
+    icons.get("medal1", 34, "ic-medal"),   // 1ro (más grande)
+    icons.get("medal3", 28, "ic-medal"),   // 3ro
+  ];
   podio.innerHTML = top3
     .map(
       (p, i) => `
     <div class="podio-col">
-      <div class="podio-name">${p.avatar} ${escHtml(p.name)}</div>
-      <div class="podio-block ${classes[i]}">${medals[i]}</div>
+      <div class="podio-name">${renderAvatarHTML(p.avatar, 22)} ${escHtml(p.name)}</div>
+      <div class="podio-block ${classes[i]}">${medalIcons[i]}</div>
       <div class="podio-score">${p.score} PTS</div>
     </div>`,
     )
@@ -177,7 +181,7 @@ function renderPartialLb(containerId) {
         pts > 0 ? `<span style="color:var(--lime);">+${pts}</span>` : "";
       return `<div class="lb-row ${cls}">
       <div class="lb-rank">${i + 1}</div>
-      <div class="lb-name">${p.avatar} ${escHtml(p.name)} ${mark}</div>
+      <div class="lb-name">${renderAvatarHTML(p.avatar, 20)} ${escHtml(p.name)} ${mark}</div>
       <div class="lb-score">${p.score}</div>
     </div>`;
     })
@@ -188,13 +192,18 @@ function renderFullLb(containerId) {
   const el = document.getElementById(containerId);
   if (!el) return;
   const sorted = sortedPlayers();
+  const medalNames = ["medal1", "medal2", "medal3"];
   el.innerHTML = sorted
     .map((p, i) => {
       const cls =
         i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
+      const rank =
+        i < 3
+          ? icons.get(medalNames[i], 18, "ic-rankmedal")
+          : i + 1;
       return `<div class="lb-row ${cls}">
-      <div class="lb-rank">${i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</div>
-      <div class="lb-name">${p.avatar} ${escHtml(p.name)}</div>
+      <div class="lb-rank">${rank}</div>
+      <div class="lb-name">${renderAvatarHTML(p.avatar, 20)} ${escHtml(p.name)}</div>
       <div class="lb-score">${p.score}</div>
     </div>`;
     })

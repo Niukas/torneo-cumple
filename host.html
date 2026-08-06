@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
+    <!-- banda decorativa one piece arriba -->
+    <div class="op-stripe"></div>
+
     <!-- ═══════════════════════════════════════════
      FASE: lobby
 ═══════════════════════════════════════════ -->
@@ -19,15 +22,15 @@
           margin-bottom: 4px;
         "
       >
-        <span style="font-size: 30px">🕹️</span>
+        <svg class="ic ic-dragon" width="30" height="30" viewBox="0 0 24 24" fill="none" shape-rendering="crispEdges" style="color: var(--dbz-orange); filter: drop-shadow(2px 2px 0 #000);"><use href="#i-dragon"/></svg>
         <div>
-          <h3>INSERT COIN</h3>
-          <h1 id="lobbyTitle">Copa de Cumple</h1>
+          <h3><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--op-red);"><use href="#i-jolly"/></svg> INSERT COIN — DRAGON TORNEO <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--dbz-orange);"><use href="#i-lightning"/></svg></h3>
+          <h1 class="anime-title" id="lobbyTitle">Copa de Cumple</h1>
         </div>
       </div>
 
       <div class="card col">
-        <h2>Jugadores conectados</h2>
+        <h2><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><use href="#i-swordCross"/></svg> Jugadores conectados</h2>
         <div id="playerChips" class="player-chips">
           <span class="dim" style="font-size: 17px"
             >Esperando jugadores...</span
@@ -43,7 +46,7 @@
       </div>
 
       <div class="card col">
-        <h2>Preguntas cargadas</h2>
+        <h2><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--op-wood);"><use href="#i-scroll"/></svg> Preguntas cargadas</h2>
         <div id="questionCount" style="font-size: 17px; color: var(--dim)">
           0 preguntas
         </div>
@@ -57,7 +60,7 @@
               padding: 6px 0;
             "
           >
-            Editar preguntas
+            <svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--dbz-orange);"><use href="#i-dragon"/></svg> Editar preguntas
           </summary>
           <div class="col" style="margin-top: 10px; gap: 8px">
             <div style="font-size: 15px; color: var(--dim)">
@@ -69,25 +72,26 @@
               style="
                 width: 100%;
                 min-height: 180px;
-                background: #0a0a16;
-                border: 2px solid var(--line);
-                color: var(--ink);
-                font-family: &quot;VT323&quot;, monospace;
+                background: #FDFBF3;
+                border: 3px solid #000;
+                color: #1A1A1A;
+                font-family: "VT323", monospace;
                 font-size: 16px;
                 padding: 10px;
+                box-shadow: inset 2px 2px 0 rgba(0,0,0,0.1);
               "
               placeholder="¿Quién llegó tarde? | Martín | Lucas | Juli | Fer | A
 Sin imagen: solo 6 campos. Con imagen: agregá | https://i.imgur.com/xxx.jpg al final"
             ></textarea>
             <button class="btn cyan" id="saveQuestionsBtn">
-              💾 Guardar preguntas
+              <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px"><use href="#i-save"/></svg> Guardar pergaminos
             </button>
           </div>
         </details>
       </div>
 
       <button class="btn magenta big" id="startGameBtn" disabled>
-        ▶ EMPEZAR JUEGO
+        <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:6px;color:var(--yellow);"><use href="#i-lightning"/></svg> ¡DALE, EMPEZÁ! <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-left:6px;color:var(--yellow);"><use href="#i-play"/></svg>
       </button>
 
       <button class="btn" id="resetBtn">↺ RESETEAR TODO</button>
@@ -127,7 +131,8 @@ Sin imagen: solo 6 campos. Con imagen: agregá | https://i.imgur.com/xxx.jpg al 
             max-height: 220px;
             max-width: 340px;
             display: none;
-            border: 3px solid var(--line);
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0 #000;
             object-fit: cover;
           "
         />
@@ -152,7 +157,7 @@ Sin imagen: solo 6 campos. Con imagen: agregá | https://i.imgur.com/xxx.jpg al 
      FASE: results (una pregunta)
 ═══════════════════════════════════════════ -->
     <div id="phaseResults" class="wrap col hidden">
-      <h2 style="text-align: center">RESULTADOS</h2>
+      <h2 style="text-align: center"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--op-red);"><use href="#i-swordCross"/></svg> RESULTADOS DE RONDA</h2>
 
       <div class="card">
         <div
@@ -161,17 +166,17 @@ Sin imagen: solo 6 campos. Con imagen: agregá | https://i.imgur.com/xxx.jpg al 
         ></div>
         <div
           id="resultAnswer"
-          style="font-size: 22px; color: var(--lime)"
+          style="font-size: 22px; color: var(--dbz-orange); text-shadow: 2px 2px 0 #000;"
         ></div>
       </div>
 
       <div class="card col">
-        <h2>Ranking parcial</h2>
+        <h2><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--blue-dark);"><use href="#i-list"/></svg> Ranking parcial</h2>
         <div id="partialLb"></div>
       </div>
 
       <button class="btn cyan big" id="nextQuestionBtn">
-        SIGUIENTE PREGUNTA ▶
+        SIGUIENTE PREGUNTA <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-left:6px"><use href="#i-play"/></svg>
       </button>
     </div>
 
@@ -179,25 +184,29 @@ Sin imagen: solo 6 campos. Con imagen: agregá | https://i.imgur.com/xxx.jpg al 
      FASE: podio final
 ═══════════════════════════════════════════ -->
     <div id="phasePodio" class="wrap col hidden">
-      <h1 class="center" style="margin-bottom: 8px">🏆 GAME OVER 🏆</h1>
+      <h1 class="center anime-title" style="margin-bottom: 8px"><svg class="ic" width="26" height="26" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--dbz-gold);filter:drop-shadow(2px 2px 0 #000);margin-right:6px"><use href="#i-trophy"/></svg> TORNEO DEL PODER <svg class="ic" width="26" height="26" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--dbz-gold);filter:drop-shadow(2px 2px 0 #000);margin-left:6px"><use href="#i-trophy"/></svg></h1>
       <div class="podio" id="podioDisplay"></div>
       <div class="card col">
-        <h2>Tabla final</h2>
+        <h2><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--blue-dark);"><use href="#i-list"/></svg> Tabla final</h2>
         <div id="finalLb"></div>
       </div>
       <button class="btn magenta big full" id="restartBtn">
-        ↺ NUEVA PARTIDA
+        <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:6px;color:var(--yellow);"><use href="#i-restart"/></svg> NUEVA PARTIDA
       </button>
       <button class="btn" id="forceEndBtn" style="margin-top: 8px">
-        ✕ CERRAR PARTIDA
+        <svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px;"><use href="#i-close"/></svg> CERRAR PARTIDA
       </button>
     </div>
 
     <!-- countdown overlay (reutilizable) -->
     <div class="countdown-overlay hidden" id="countdownOverlay"></div>
 
+    <!-- banda decorativa one piece abajo -->
+    <div class="op-stripe"></div>
+
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+    <script src="js/icons.js"></script>
     <script src="js/firebase.js"></script>
     <script src="js/host.js"></script>
   </body>

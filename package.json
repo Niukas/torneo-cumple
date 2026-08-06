@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@dicebear/core": "^10.4.0",
+    "@dicebear/styles": "^10.3.0",
     "firebase": "^12.17.1"
   }
 }

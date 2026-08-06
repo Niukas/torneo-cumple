@@ -42,30 +42,38 @@
     </style>
   </head>
   <body>
+    <div class="op-stripe"></div>
+
     <!-- ── UNIRSE ── -->
     <div id="joinScreen" class="col">
       <div class="center" style="margin-bottom: 20px">
-        <span style="font-size: 36px">🕹️</span>
-        <h1 style="margin-top: 8px" id="joinTitle">Copa de Cumple</h1>
+        <svg class="ic" width="44" height="44" viewBox="0 0 24 24" fill="none" shape-rendering="crispEdges" style="color: var(--dbz-orange); filter: drop-shadow(2px 2px 0 #000);"><use href="#i-dragon"/></svg>
+        <h1 class="anime-title" style="margin-top: 8px" id="joinTitle">Copa de Cumple</h1>
       </div>
 
       <div class="card col">
-        <h2>Tu nombre</h2>
+        <h2><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--op-red);"><use href="#i-sword"/></svg> Tu apodo de pirata</h2>
         <input
           type="text"
           id="inpName"
-          placeholder="ej. Facu"
+          placeholder="ej. Luffy"
           maxlength="16"
           autocomplete="off"
         />
+
+        <div class="avatar-picker">
+          <div class="avatar-preview" id="avatarPreview"></div>
+          <button type="button" class="scramble-btn" id="scrambleAvatarsBtn" title="Probar otro avatar">
+            <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--blue-dark);"><use href="#i-dragon"/></svg>
+            <span style="margin-left:4px">otra</span>
+          </button>
+        </div>
+        <div style="font-size:14px;color:var(--dim);line-height:1.3">
+          Tu avatar se genera de tu apodo. Tocá “otra” para ver otro.
+        </div>
       </div>
 
-      <div class="card col">
-        <h2>Tu avatar</h2>
-        <div class="avatar-grid" id="avatarGrid"></div>
-      </div>
-
-      <button class="btn magenta big full" id="joinBtn">ENTRAR AL JUEGO</button>
+      <button class="btn magenta big full" id="joinBtn"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:6px;color:var(--yellow);"><use href="#i-anchor"/></svg> ZARPAR AL TORNEO</button>
       <div
         id="joinError"
         style="
@@ -79,10 +87,8 @@
 
     <!-- ── ESPERANDO ── -->
     <div id="waitScreen" class="hidden col">
-      <span style="font-size: 48px; display: block; margin-bottom: 16px"
-        >⏳</span
-      >
-      <h2>Esperando que el host arranque...</h2>
+      <svg class="ic" width="56" height="56" viewBox="0 0 24 24" fill="none" shape-rendering="crispEdges" style="display:block;margin:0 auto 16px;color:var(--op-wood);filter:drop-shadow(3px 3px 0 #000);"><use href="#i-anchor"/></svg>
+      <h2 style="text-align:center">En el muelle, esperando zarpar...</h2>
       <div
         id="myNameBadge"
         class="badge green"
@@ -90,7 +96,7 @@
       ></div>
       <div style="margin-top: 30px; text-align: center">
         <button class="btn" id="leaveWaitBtn" style="font-size: 9px">
-          Salir del juego
+          Abandonar tripulación
         </button>
       </div>
     </div>
@@ -133,7 +139,8 @@
               max-height: 180px;
               object-fit: cover;
               display: none;
-              border: 2px solid var(--line);
+              border: 3px solid #000;
+              box-shadow: 4px 4px 0 #000;
             "
           />
           <div
@@ -157,7 +164,7 @@
         class="col hidden"
         style="padding: 16px 0; gap: 12px"
       >
-        <h2 class="center">RESULTADOS</h2>
+        <h2 class="center"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--op-red);"><use href="#i-swordCross"/></svg> RESULTADOS DE RONDA</h2>
         <div class="card col" style="gap: 6px" id="resultsLb"></div>
         <div
           class="badge green center"
@@ -172,14 +179,14 @@
         class="col hidden"
         style="padding: 16px 0; text-align: center; gap: 16px"
       >
-        <h1>🏆 FIN!</h1>
+        <h1 class="anime-title"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--dbz-gold);filter:drop-shadow(2px 2px 0 #000);margin-right:6px"><use href="#i-trophy"/></svg> TORNEO DEL PODER <svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;color:var(--dbz-gold);filter:drop-shadow(2px 2px 0 #000);margin-left:6px"><use href="#i-trophy"/></svg></h1>
         <div class="podio" id="podioPlay"></div>
         <div
           id="myFinalRank"
           style="
-            font-family: &quot;Press Start 2P&quot;, monospace;
+            font-family: "Press Start 2P", monospace;
             font-size: 13px;
-            color: var(--cyan);
+            color: var(--blue-dark);
           "
         ></div>
       </div>
@@ -188,15 +195,18 @@
         <button
           class="btn"
           id="leaveGameBtn"
-          style="font-size: 9px; opacity: 0.5"
+          style="font-size: 9px; opacity: 0.6"
         >
-          Salir del juego
+          Abandonar tripulación
         </button>
       </div>
     </div>
 
+    <div class="op-stripe"></div>
+
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+    <script src="js/icons.js"></script>
     <script src="js/firebase.js"></script>
     <script src="js/play.js"></script>
   </body>

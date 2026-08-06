@@ -1,22 +1,4 @@
 // ─── constantes ────────────────────────────────
-const AVATARS = [
-  "🐶",
-  "🐱",
-  "🦊",
-  "🐸",
-  "🐼",
-  "🐨",
-  "🦁",
-  "🐯",
-  "🐧",
-  "🦉",
-  "🦋",
-  "🐲",
-  "👾",
-  "🤖",
-  "👻",
-  "🎃",
-];
 const LABELS = ["A", "B", "C", "D"];
 
 // ─── estado global ──────────────────────────────
@@ -31,35 +13,79 @@ let state = {
 };
 let timerInterval = null;
 
-// ─── avatar picker ──────────────────────────────
-const avatarGrid = document.getElementById("avatarGrid");
-let myAvatar = AVATARS[0];
-AVATARS.forEach((av, i) => {
-  const div = document.createElement("div");
-  div.className = "av" + (i === 0 ? " sel" : "");
-  div.textContent = av;
-  div.addEventListener("click", () => {
-    myAvatar = av;
-    avatarGrid
-      .querySelectorAll(".av")
-      .forEach((d) => d.classList.remove("sel"));
-    div.classList.add("sel");
-  });
-  avatarGrid.appendChild(div);
+// ─── avatar picker (DiceBear notionists-neutral) ──
+// Estado del avatar:
+//   overrideSeed = seed "fixed" si el usuario apretó "otra" (string o null)
+// Modo:
+//   - si overrideSeed existe → mostrar esa seed (o placeholder si está null)
+//   - si el usuario escribe → se limpia overrideSeed y se usa seed = nombre
+// Al unirse: prioriza overrideSeed, si no, deriva del nombre.
+const avatarPreviewEl = document.getElementById("avatarPreview");
+const inpName = document.getElementById("inpName");
+let overrideSeed = null; // seed "frozen" por el botón "otra"
+
+// Restaurar override guardado de sesión previa (la seed fija que eligió)
+const saved = localStorage.getItem("torneo_avatar"); // "dicebear:<seed>"
+if (isDicebear(saved)) overrideSeed = dicebearSeed(saved);
+
+function renderAvatarPreview() {
+  if (!avatarPreviewEl) return;
+  const name = inpName.value.trim().toLowerCase().replace(/\s+/g, "-");
+  const seed = overrideSeed || (name || null);
+
+  if (!seed) {
+    // sin nombre y sin override → placeholder "?" tipo arcade
+    avatarPreviewEl.innerHTML =
+      '<div class="avatar-placeholder">?</div>';
+    return;
+  }
+  avatarPreviewEl.innerHTML =
+    '<img id="avatarImg" src="' + avatarUrl(seed) + '" alt="avatar" width="120" height="120">';
+  avatarPreviewEl.dataset.seed = seed;
+}
+
+// El input cambia → limpiar override y refrescar
+inpName.addEventListener("input", () => {
+  overrideSeed = null;
+  localStorage.removeItem("torneo_avatar");
+  renderAvatarPreview();
 });
+
+document.getElementById("scrambleAvatarsBtn")?.addEventListener("click", () => {
+  // "otra": nueva seed random como override
+  const exclude = [];
+  if (overrideSeed) exclude.push(overrideSeed);
+  overrideSeed = randomSeed(exclude);
+  localStorage.setItem("torneo_avatar", "dicebear:" + overrideSeed);
+  renderAvatarPreview();
+});
+
+renderAvatarPreview();
 
 // ─── unirse ─────────────────────────────────────
 document.getElementById("joinBtn").addEventListener("click", async () => {
-  const name = document.getElementById("inpName").value.trim();
+  const name = inpName.value.trim();
   const errEl = document.getElementById("joinError");
   if (!name) {
     errEl.textContent = "Escribí tu nombre primero.";
     return;
   }
   errEl.textContent = "";
+  // Resolver la seed final:
+  //   - si el jugador apretó "otra" (overrideSeed), usarla
+  //   - si no, derivar determinísticamente del nombre
+  let seed;
+  if (overrideSeed) {
+    seed = overrideSeed;
+  } else {
+    seed = name.toLowerCase().replace(/\s+/g, "-");
+  }
+  const myAvatar = "dicebear:" + seed;
+  localStorage.setItem("torneo_avatar", myAvatar);
   await dbSet(`party/players/${myId}`, { name, avatar: myAvatar, score: 0 });
   showScreen("wait");
-  document.getElementById("myNameBadge").textContent = `${myAvatar} ${name}`;
+  document.getElementById("myNameBadge").innerHTML =
+    renderAvatarHTML(myAvatar, 22, "ic-badge") + " " + escHtml(name);
 });
 
 // ─── listeners Firebase (todos actualizan estado y re-renderizan) ──
@@ -100,8 +126,8 @@ dbOn("party/players", (p) => {
   if (me) {
     document.getElementById("myScoreTop").textContent =
       (me.score || 0) + " PTS";
-    document.getElementById("myNameTop").textContent =
-      (me.avatar || "") + " " + (me.name || "");
+    document.getElementById("myNameTop").innerHTML =
+      renderAvatarHTML(me.avatar, 18, "ic-topbar") + " " + escHtml(me.name || "");
   }
   render();
 });
@@ -237,12 +263,14 @@ function submitAnswer(optionIndex, btn) {
 function showFeedback(correct, pts, timeout = false) {
   showSub("feedback");
   if (timeout) {
-    document.getElementById("feedbackEmoji").textContent = "⌛";
+    document.getElementById("feedbackEmoji").innerHTML = icons.get("hourglass", 56, "ic-feedback ic-timeout");
     document.getElementById("feedbackMsg").textContent = "¡Se acabó el tiempo!";
     document.getElementById("feedbackPts").textContent = "+0 PTS";
     return;
   }
-  document.getElementById("feedbackEmoji").textContent = correct ? "✅" : "❌";
+  document.getElementById("feedbackEmoji").innerHTML = correct
+    ? icons.get("check", 56, "ic-feedback ic-correct")
+    : icons.get("cross", 56, "ic-feedback ic-wrong");
   document.getElementById("feedbackMsg").textContent = correct
     ? "¡Correcto!"
     : "Eso no era...";
@@ -271,12 +299,12 @@ function renderResultsLb() {
         i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
       const mark = p.correct
         ? `<span style="color:var(--lime);">+${p.pts}</span>`
-        : "❌";
+        : icons.get("cross", 14, "ic-wrong-inline");
       const me =
         p.uid === myId ? ' <span style="color:var(--cyan);">← vos</span>' : "";
       return `<div class="lb-row ${cls}">
       <div class="lb-rank">${i + 1}</div>
-      <div class="lb-name">${p.avatar} ${escHtml(p.name)}${me} ${mark}</div>
+      <div class="lb-name">${renderAvatarHTML(p.avatar, 18)} ${escHtml(p.name)}${me} ${mark}</div>
       <div class="lb-score">${p.score || 0}</div>
     </div>`;
     })
@@ -301,7 +329,7 @@ function renderPodio() {
     .map(
       (p, i) => `
     <div class="podio-col">
-      <div class="podio-name">${p.avatar} ${escHtml(p.name)}</div>
+      <div class="podio-name">${renderAvatarHTML(p.avatar, 22)} ${escHtml(p.name)}</div>
       <div class="podio-block ${classes[i]}">${medals[i]}</div>
       <div class="podio-score">${p.score || 0} PTS</div>
     </div>`,
@@ -343,8 +371,8 @@ function escHtml(s) {
 dbOnce(`party/players/${myId}`, (p) => {
   if (p) {
     showScreen("wait");
-    document.getElementById("myNameBadge").textContent =
-      `${p.avatar} ${p.name}`;
+    document.getElementById("myNameBadge").innerHTML =
+      renderAvatarHTML(p.avatar, 22, "ic-badge") + " " + escHtml(p.name || "");
   }
 });
 
