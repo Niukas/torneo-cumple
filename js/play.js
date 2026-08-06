@@ -162,6 +162,14 @@ function renderQuestion() {
   document.getElementById("qLabelPlay").textContent =
     `PREGUNTA ${state.questionIndex + 1} / ${state.questions.length}`;
   document.getElementById("questionTextPlay").textContent = q.text;
+  const img = document.getElementById("questionImgPlay");
+  if (q.image) {
+    img.src = q.image;
+    img.style.display = "block";
+  } else {
+    img.style.display = "none";
+    img.src = "";
+  }
 
   const grid = document.getElementById("optionsPlay");
   // solo re-renderizar botones si cambiaron (evitar parpadeo)
