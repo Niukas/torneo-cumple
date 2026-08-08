@@ -156,6 +156,7 @@ function render() {
     if (!document.getElementById("playScreen").classList.contains("hidden")) {
       showScreen("play");
     }
+    // Si no he respondido, mostrar pregunta (trivia o freetext)
     if (!state.hasAnswered) {
       showSub("question");
       renderQuestion();
@@ -202,7 +203,8 @@ function renderQuestion() {
   if (grid.dataset.qIndex === String(state.questionIndex)) return;
   grid.dataset.qIndex = state.questionIndex;
   grid.innerHTML = "";
-  LABELS.forEach((l, i) => {
+  const labels = LABELS.slice(0, q.options.length);
+  labels.forEach((l, i) => {
     const btn = document.createElement("button");
     btn.className = `opt-btn ${l}`;
     btn.innerHTML = `<span style="opacity:.6;">${l})</span> ${escHtml(q.options[i])}`;
@@ -213,6 +215,31 @@ function renderQuestion() {
   // arrancar timer solo si no está corriendo para esta pregunta
   if (grid.dataset.timerQ === String(state.questionIndex)) return;
   grid.dataset.timerQ = state.questionIndex;
+
+  if (q.type === "freetext") {
+    // --- Render Freetext Input ---
+    grid.innerHTML = `
+      <div class="col">
+        <input type="text" id="freeTextInp" placeholder="Tu respuesta..." maxlength="100" autocomplete="off">
+        <button class="btn magenta big" id="sendFreeBtn">ENVIAR RESPUESTA</button>
+      </div>
+    `;
+    document.getElementById("sendFreeBtn").addEventListener("click", () => {
+      const text = document.getElementById("freeTextInp").value.trim();
+      if (!text) return;
+      dbSet(`party/answers/${myId}`, { text, ts: Date.now() });
+      state.hasAnswered = true;
+      showSub("feedback");
+      document.getElementById("feedbackEmoji").textContent = "🚀";
+      document.getElementById("feedbackMsg").textContent = "Respuesta enviada!";
+      document.getElementById("feedbackPts").textContent = "";
+    });
+    clearInterval(timerInterval);
+    document.getElementById("timerPlay").textContent = "∞";
+    return;
+  }
+
+  // --- Render Trivia ---
   clearInterval(timerInterval);
   let left = 30;
   updateTimerUI(left);
@@ -323,14 +350,18 @@ function renderPodio() {
 
   const top3 = [sorted[1], sorted[0], sorted[2]].filter(Boolean);
   const classes = ["p2", "p1", "p3"];
-  const medals = ["🥈", "🥇", "🥉"];
+  const medalIcons = [
+    icons.get("medal2", 30, "ic-medal"), // 2do
+    icons.get("medal1", 34, "ic-medal"), // 1ro (más grande)
+    icons.get("medal3", 28, "ic-medal"), // 3ro
+  ];
 
   document.getElementById("podioPlay").innerHTML = top3
     .map(
       (p, i) => `
     <div class="podio-col">
       <div class="podio-name">${renderAvatarHTML(p.avatar, 22)} ${escHtml(p.name)}</div>
-      <div class="podio-block ${classes[i]}">${medals[i]}</div>
+      <div class="podio-block ${classes[i]}">${medalIcons[i]}</div>
       <div class="podio-score">${p.score || 0} PTS</div>
     </div>`,
     )

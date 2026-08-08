@@ -5,13 +5,14 @@ if (pwd !== "cumple2026") {
 }
 
 // ─── constantes ────────────────────────────────
-const QUESTION_TIME = 30; // segundos por pregunta
+const QUESTION_TIME = 30; // segundos por pregunta (trivia)
 const MAX_POINTS = 1000;
+const FREETEXT_POINTS = 1000;  // pts por cada respuesta que el host premia en freetext
 const LABELS = ["A", "B", "C", "D"];
 const OPT_COLORS = { A: "#E8212A", B: "#1565C0", C: "#F9A825", D: "#2E7D32" };
 
 // ─── estado local ───────────────────────────────
-let questions = []; // [{ text, options:[str,str,str,str], correct:0..3 }]
+let questions = []; // [{ text, type:'trivia'|'freetext', options:[...], correct:<idx>|null, image }]
 let players = {}; // uid → { name, avatar, score }
 let gamePhase = "lobby";
 let currentQ = 0;
@@ -48,11 +49,15 @@ function onQuestions(q) {
   questions = q || [];
   document.getElementById("questionCount").textContent =
     `${questions.length} preguntas cargadas`;
-  // pre-cargar en el editor
+  // pre-cargar en el editor (soporta image opcional al final)
   const editor = document.getElementById("questionsEditor");
   if (editor && questions.length) {
     editor.value = questions
-      .map((q) => `${q.text} | ${q.options.join(" | ")} | ${LABELS[q.correct]}`)
+      .map((q) => {
+        let line = `${q.text} | ${q.options.join(" | ")} | ${LABELS[q.correct]}`;
+        if (q.image) line += ` | ${q.image}`;
+        return line;
+      })
       .join("\n");
   }
   updateStartBtn();
@@ -60,6 +65,14 @@ function onQuestions(q) {
 
 function onAnswers(a) {
   answersThisRound = a || {};
+  const q = questions[currentQ];
+  const isFree = q && q.type === "freetext";
+
+  if (isFree) {
+    renderFreetextAnswers();
+    return;
+  }
+
   const count = Object.keys(answersThisRound).length;
   const total = Object.keys(players).length;
   const el = document.getElementById("answerCount");
@@ -113,6 +126,7 @@ function renderPlayers() {
 function renderQuestion() {
   const q = questions[currentQ];
   if (!q) return;
+  const isFree = q.type === "freetext";
   const total = questions.length;
   document.getElementById("qLabel").textContent =
     `PREGUNTA ${currentQ + 1} / ${total}`;
@@ -127,14 +141,44 @@ function renderQuestion() {
   }
   // opciones (solo display, host no interactúa)
   const grid = document.getElementById("hostOptions");
-  grid.innerHTML = LABELS.map(
-    (l, i) => `
-    <div class="opt-btn ${l}" style="cursor:default;">
-      <span style="opacity:.6;">${l})</span> ${escHtml(q.options[i])}
-    </div>`,
-  ).join("");
-  startTimer();
+  if (isFree) {
+    grid.innerHTML = '<div class="card">Esperando respuestas...</div>';
+    renderFreetextAnswers();
+    clearInterval(timerInterval);
+    document.getElementById("timerDisplay").textContent = "∞";
+  } else {
+    const labels = LABELS.slice(0, q.options.length);
+    grid.innerHTML = labels
+      .map(
+        (l, i) => `
+      <div class="opt-btn ${l}" style="cursor:default;">
+        <span style="opacity:.6;">${l})</span> ${escHtml(q.options[i])}
+      </div>`,
+      )
+      .join("");
+    startTimer();
+  }
 }
+
+function renderFreetextAnswers() {
+  const grid = document.getElementById("hostOptions");
+  const list = Object.entries(answersThisRound).map(([uid, a]) => ({ uid, ...a }));
+  if (!list.length) return;
+  grid.innerHTML = list
+    .map(
+      (a) => `
+    <div class="lb-row">
+      <div class="lb-name">${escHtml(players[a.uid]?.name || "Anónimo")}: ${escHtml(a.text || "")}</div>
+      <button class="btn lime" onclick="givePoints('${a.uid}')">✓ Dar puntos</button>
+    </div>`,
+    )
+    .join("");
+}
+
+window.givePoints = (uid) => {
+  dbUpdate(`party/players/${uid}/score`, (players[uid]?.score || 0) + FREETEXT_POINTS);
+  alert("Puntos otorgados a " + (players[uid]?.name || "jugador"));
+};
 
 function renderResults() {
   const q = questions[currentQ];
@@ -243,12 +287,18 @@ function updateTimerUI() {
 // ─── lógica del juego ───────────────────────────
 function closeQuestion() {
   clearInterval(timerInterval);
-  // calcular puntos para cada respuesta
   const q = questions[currentQ];
+  if (!q) return;
+
+  if (q.type === "freetext") {
+    dbSet("party/meta/phase", "results");
+    return;
+  }
+
+  // --- Lógica Trivia ---
   const updates = {};
   Object.entries(answersThisRound).forEach(([uid, ans]) => {
     if (ans.option === q.correct) {
-      // pts en función de velocidad: entre 500 y MAX_POINTS según qué tan rápido respondió
       const elapsed = Math.min(
         QUESTION_TIME * 1000,
         ans.ts - (ans.questionStartTs || ans.ts),
@@ -347,16 +397,46 @@ document.getElementById("saveQuestionsBtn").addEventListener("click", () => {
     .split("\n")
     .filter(Boolean)
     .map((line) => {
-      const parts = line.split("|").map((s) => s.trim());
-      if (parts.length < 6) return null;
-      const correct = LABELS.indexOf(parts[5].toUpperCase());
-      if (correct === -1) return null;
-      return {
-        text: parts[0],
-        options: [parts[1], parts[2], parts[3], parts[4]],
-        correct,
-        image: parts[6] || null,
-      };
+      let rawParts = line.split("|").map((s) => s.trim());
+      let type = "trivia";
+      
+      // 1. Detectar prefijo
+      const first = rawParts[0].toUpperCase();
+      if (first === "TRIVIA" || first === "TRIVIA:") {
+        rawParts = rawParts.slice(1);
+      } else if (first === "LIBRE" || first === "LIBRE:") {
+        type = "freetext";
+        rawParts = rawParts.slice(1);
+      }
+
+      if (rawParts.length < 1) return null;
+
+      // 2. Freetext: solo texto + imagen opcional
+      if (type === "freetext") {
+        let image = null;
+        if (rawParts.length >= 2 && /^https?:\/\//i.test(rawParts[rawParts.length - 1])) {
+          image = rawParts.pop();
+        }
+        return { type, text: rawParts[0], options: [], correct: null, image };
+      }
+
+      // 3. Trivia: texto + opciones + correcta + imagen opcional
+      // Detectar image al final
+      let image = null;
+      if (rawParts.length >= 4 && /^https?:\/\//i.test(rawParts[rawParts.length - 1])) {
+        image = rawParts.pop();
+      }
+
+      // El último campo es la letra correcta
+      const correctStr = rawParts[rawParts.length - 1].toUpperCase();
+      const correct = LABELS.indexOf(correctStr);
+      if (correct === -1) return null; // No es letra válida
+
+      const options = rawParts.slice(1, rawParts.length - 1);
+      if (options.length < 2 || options.length > 4) return null;
+      if (correct >= options.length) return null;
+
+      return { type, text: rawParts[0], options, correct, image };
     })
     .filter(Boolean);
   if (!parsed.length) {
